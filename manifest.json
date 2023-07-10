@@ -1,0 +1,17 @@
+{
+  "name": "Plugin name",
+  "id": "000000000000000000",
+  "api": "1.0.0",
+  "main": "code.js",
+  "editorType": [
+    "figma"
+  ],
+  "relaunchButtons": [
+    {
+      "command": "relaunch",
+      "name": "do the stuff again",
+      "multipleSelection": true
+    }
+  ],
+  "ui": "ui.html"
+}
