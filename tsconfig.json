@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "target": "es6",
+    "module": "commonjs",
     "lib": [
       "es6",
       "DOM"
     ],
-    "strict": true,
+    "strict": false,
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules/@figma"

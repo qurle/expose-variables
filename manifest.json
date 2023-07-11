@@ -8,8 +8,8 @@
   ],
   "relaunchButtons": [
     {
-      "command": "relaunch",
-      "name": "do the stuff again",
+      "command": "rewrite",
+      "name": "Refresh variables",
       "multipleSelection": true
     }
   ]
