@@ -11,18 +11,7 @@ let count: number = 0
 
 figma.on("currentpagechange", cancel)
 
-// For networking purposes
-figma.showUI(__html__, { visible: false })
-const post = (k, v = 1, last = false) => figma.ui.postMessage({ k: k, v: v, last: last })
-figma.ui.onmessage = async (msg) => {
-  if (msg === "finished") // Real plugin finish (after server's last response)
-    figma.closePlugin()
-  else
-    console.log(msg)
-}
-
 // Main + Elements Check
-post("started")
 working = true
 selection = figma.currentPage.selection
 
