@@ -15,6 +15,7 @@ const FONT_SEMIBOLD: FontName = { family: 'Inter', style: 'Semi Bold' }
 const FONT_ITALIC: FontName = { family: 'Inter', style: 'Italic' }
 const LIGHT: Paint = { type: 'SOLID', color: { r: 0.988, g: 0.988, b: 0.988 } }
 const DARK: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 } }
+const DARK_20: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 }, opacity: 0.2 }
 
 let lastX: number = 0
 let lastY: number = 0
@@ -122,6 +123,8 @@ async function writeVariables() {
             const newFills = JSON.parse(JSON.stringify(indicator.fills))
             newFills[0] = figma.variables.setBoundVariableForPaint(newFills[0], 'color', v)
             indicator.fills = newFills
+            indicator.strokes = [DARK_20]
+            indicator.strokeWeight = 1
 
             valueRow.appendChild(indicator)
 
