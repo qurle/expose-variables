@@ -50,8 +50,10 @@ function createMainFrame() {
 setTimeout(finish.bind('Timeouted!'), 10000)
 
 // Main
-if (figma.command === 'rewrite' && selection?.length === 1 && selection[0]?.type === 'FRAME' && selection[0]?.getRelaunchData().rewrite === REWRITE_MSG)
+if (selection[0]?.type === 'FRAME' && selection[0]?.getRelaunchData().rewrite === REWRITE_MSG) {
   mainFrame = selection[0]
+  mainFrame.children.forEach(child => child.remove())
+}
 else {
   createMainFrame()
 }
@@ -127,16 +129,17 @@ async function writeVariables() {
 
           if (type === 'BOOLEAN') {
             const box = figma.createFrame()
+            const isTrue = value.toLowerCase() === 'true'
             box.resizeWithoutConstraints(2 * unit, unit)
             box.cornerRadius = unit / 2
-            box.fills = []
+            box.fills = isTrue ? [DARK] : []
             box.strokes = [DARK]
             box.strokeWeight = 2
             box.appendChild(indicator)
-            indicator.x = value ? unit : 0
+            indicator.x = isTrue ? unit : 0
             indicator.y = 0
 
-            indicator.fills = value.toLowerCase() === 'true' ? [DARK] : []
+            indicator.fills = isTrue ? [LIGHT] : []
             indicator.strokes = [DARK]
             indicator.strokeWeight = 2
 
