@@ -1,13 +1,13 @@
 {
-  "name": "plugin-name",
+  "name": "expose-variables",
   "version": "1.0.0",
-  "description": "insert your description",
+  "description": "Keep your variables in UI kit, show them to developers and update in one click",
   "main": "code.js",
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "watch": "npm run build -- --watch"
   },
-  "author": "your precious name",
+  "author": "Nick Qurle",
   "license": "",
   "devDependencies": {
     "@figma/plugin-typings": "^1.70.0"
