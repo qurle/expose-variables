@@ -13,6 +13,7 @@ let count: number = 0
 const FONT_REGULAR: FontName = { family: 'Inter', style: 'Regular' }
 const FONT_SEMIBOLD: FontName = { family: 'Inter', style: 'Semi Bold' }
 const FONT_ITALIC: FontName = { family: 'Inter', style: 'Italic' }
+const FONT_MONO: FontName = { family: 'Space Mono', style: 'Regular' }
 const LIGHT: Paint = { type: 'SOLID', color: { r: 0.988, g: 0.988, b: 0.988 } }
 const DARK: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 } }
 const DARK_20: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 }, opacity: 0.2 }
@@ -108,11 +109,18 @@ async function writeVariables() {
       for (const v of variables) {
         let vValue: SceneNode
         const type = v.resolvedType
-        const value = (type === 'COLOR') ? figmaRGBToHex(v.valuesByMode[m.modeId]) : v.valuesByMode[m.modeId].toString()
+        let value = v.valuesByMode[m.modeId]
+        let font = FONT_REGULAR
+        if (value?.type === 'VARIABLE_ALIAS') {
+          value = figma.variables.getVariableById(value.id).name.toString()
+          font = FONT_ITALIC
+        } else
+          value = (type === 'COLOR') ? figmaRGBToHex(v.valuesByMode[m.modeId]) : v.valuesByMode[m.modeId].toString()
+
         if (type === 'BOOLEAN' || type === 'COLOR') {
           const valueRow: FrameNode = createAutolayout(v.name, 'HORIZONTAL', 16)
 
-          vValue = makeText(value, FONT_REGULAR, FONT_SIZE)
+          vValue = makeText(value, font, FONT_SIZE)
           const unit = vValue.height
 
           // Representative ellipse
@@ -155,7 +163,7 @@ async function writeVariables() {
           valueRow.appendChild(vValue)
           addToColumn(valueColumn, valueRow)
         } else {
-          vValue = makeText(value, type === 'STRING' ? FONT_ITALIC : FONT_REGULAR, FONT_SIZE)
+          vValue = makeText(value, font, FONT_SIZE)
           offset(vValue, 0, MARGIN_Y)
           addToColumn(valueColumn, vValue)
         }
