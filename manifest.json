@@ -12,5 +12,11 @@
       "name": "Refresh variables",
       "multipleSelection": true
     }
-  ]
+  ],
+  "networkAccess": {
+    "allowedDomains": [
+      "none"
+    ],
+    "reasoning": "Everything is local"
+  }
 }
