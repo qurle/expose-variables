@@ -103,6 +103,7 @@ async function writeVariables() {
       const mName = makeText(modeName, FONT_SEMIBOLD, FONT_SIZE)
       offset(mName, MARGIN_X, 0)
       addToColumn(valueColumn, mName)
+      valueColumn.setExplicitVariableModeForCollection(c.id, m.modeId)
       mName.minHeight = cName.height
       mName.textAlignVertical = 'CENTER'
 
@@ -130,6 +131,7 @@ async function writeVariables() {
 
           if (type === 'COLOR') {
             const newFills = JSON.parse(JSON.stringify(indicator.fills))
+            console.log(newFills)
             newFills[0] = figma.variables.setBoundVariableForPaint(newFills[0], 'color', v)
             indicator.fills = newFills
             indicator.strokes = [DARK_20]
