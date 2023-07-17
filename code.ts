@@ -82,6 +82,7 @@ async function writeVariables() {
 
 
     const variables = c.variableIds.map(id => figma.variables.getVariableById(id))
+    variables.sort((a, b) => a.name.localeCompare(b.name))
 
     for (const v of variables) {
       const vName = makeText(v.name, FONT_SEMIBOLD, FONT_SIZE)
