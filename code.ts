@@ -1,7 +1,7 @@
 // Constants and variables
 const CONFIRM_MSGS = ["Done!", "You got it!", "Aye!", "Is that all?", "My job here is done.", "Gotcha!", "It wasn't hard.", "Got it! What's next?"]
 const ACTION_MSGS = ["Updated", "Writed", "Made it with", "Got"]
-const IDLE_MSGS = ["All great, already", "Nothing to do, everything's good", "Any layers to affect? Can't see it", "Nothing to do, your layers are great"]
+const IDLE_MSGS = ["Did not found any variables", "Nothing to do, see no variables", "Any variables? Can't see it", "Can't update any variables. Did you set 'em up?"]
 const DEFAULT_MODE_NAME = 'Mode 1'
 const REWRITE_MSG = 'Rewrite this frame with new variables'
 
