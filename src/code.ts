@@ -1,3 +1,5 @@
+import { xCollection, xVariable, xValue } from './Collection'
+
 // Constants and variables
 const CONFIRM_MSGS = ["Done!", "You got it!", "Aye!", "Is that all?", "My job here is done.", "Gotcha!", "It wasn't hard.", "Got it! What's next?"]
 const ACTION_MSGS = ["Updated", "Writed", "Made it with", "Got"]
@@ -17,9 +19,6 @@ const FONT_MONO: FontName = { family: 'Space Mono', style: 'Regular' }
 const LIGHT: Paint = { type: 'SOLID', color: { r: 0.988, g: 0.988, b: 0.988 } }
 const DARK: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 } }
 const DARK_20: Paint = { type: 'SOLID', color: { r: 0.192, g: 0.192, b: 0.192 }, opacity: 0.2 }
-
-let lastX: number = 0
-let lastY: number = 0
 
 const MARGIN_X: number = 80
 const MARGIN_Y: number = 40
@@ -57,12 +56,59 @@ if (selection[0]?.type === 'FRAME' && selection[0]?.getRelaunchData().rewrite ==
   mainFrame.children.forEach(child => child.remove())
 }
 else {
-  createMainFrame()
+  // createMainFrame()
 }
-writeVariables().then(finish.bind(undefined))
+// exposeVariables().then(finish.bind(undefined))
+writeVariables()
+finish.bind(null)
+
+function writeVariables() {
+  // Getting all collections
+  console.log('Writing mode')
+
+  const cs: xCollection[] = []
+  const collections: VariableCollection[] = figma.variables.getLocalVariableCollections()
+
+  for (const collection of collections) {
+    let c: xCollection = { id: collection.id, name: collection.name, modes: collection.modes, variables: [] };
+
+    const variables: Variable[] = collection.variableIds.map(id => figma.variables.getVariableById(id))
+    for (const variable of variables) {
+
+      let v: xVariable = { id: variable.id, name: variable.name, description: variable.description, type: variable.resolvedType, values: [] }
+
+      const values = variable.valuesByMode                            // Values of variable
+      for (const [key, value] of Object.entries(values)) {            // Can't normally iterate 'cause it's object, not an array
+        let vl: xValue = { modeId: key, alias: null, resolvedValue: null }
+        if (value?.type === 'VARIABLE_ALIAS') {
+          vl.alias = value.id
+          vl.resolvedValue = getResolvedValue(variable.id, key)
+        }
+        else
+          vl.resolvedValue = value
+        v.values.push(vl)
+      }
+      c.variables.push(v)
+    }
+    cs.push(c)
+  }
+
+  // console.log(JSON.stringify(cs))
+
+}
+
+function getResolvedValue(variableId, modeId) {
+  const variable = figma.variables.getVariableById(variableId)
+  const value = variable.valuesByMode[modeId]
+  if (value?.type === 'VARIABLE_ALIAS')
+    getResolvedValue(value.id, modeId)
+  else
+    return value
+
+}
 
 // Action for selected nodes
-async function writeVariables() {
+async function exposeVariables() {
 
   await figma.loadFontAsync(FONT_REGULAR)
   await figma.loadFontAsync(FONT_SEMIBOLD)
@@ -77,7 +123,6 @@ async function writeVariables() {
 
     // Name of collection
     const cName = makeText(c.name, FONT_SEMIBOLD, L_FONT_SIZE)
-    offset(cName, 0, MARGIN_Y, false)
     addToColumn(nameColumn, cName)
 
 
@@ -86,22 +131,18 @@ async function writeVariables() {
 
     for (const v of variables) {
       const vName = makeText(v.name, FONT_SEMIBOLD, FONT_SIZE)
-      offset(vName, 0, MARGIN_Y)
       addToColumn(nameColumn, vName)
       count++
     }
 
-    lastY = 0
-
     // Print Modes
     for (const m of c.modes) {
-      lastY = 0
       const valueColumn: FrameNode = createAutolayout(m.name, 'VERTICAL', MARGIN_Y)
       collectionRow.appendChild(valueColumn)
 
       const modeName = (c.modes.length === 1 && m.name === DEFAULT_MODE_NAME) ? 'Value' : m.name
       const mName = makeText(modeName, FONT_SEMIBOLD, FONT_SIZE)
-      offset(mName, MARGIN_X, 0)
+      // offset(mName, MARGIN_X, 0)
       addToColumn(valueColumn, mName)
       valueColumn.setExplicitVariableModeForCollection(c.id, m.modeId)
       mName.minHeight = cName.height
@@ -167,25 +208,11 @@ async function writeVariables() {
           addToColumn(valueColumn, valueRow)
         } else {
           vValue = makeText(value, font, FONT_SIZE)
-          offset(vValue, 0, MARGIN_Y)
           addToColumn(valueColumn, vValue)
         }
       }
     }
   }
-}
-
-function offset(node: SceneNode, x: number, y: number, absolute: boolean = false) {
-  if (absolute) {
-    node.x = x
-    node.y = y
-  }
-  else {
-    node.x = (x === 0) ? lastX - node.width : lastX + x
-    node.y = (y === 0) ? lastY - node.height : lastY + y
-  }
-  lastX = node.x + node.width
-  lastY = node.y + node.height
 }
 
 function makeText(text: string, font: FontName, size: number, truncate: boolean = true) {
@@ -241,7 +268,7 @@ function createAutolayout(
 async function refreshVariablesSection(node) { }
 
 // Ending the work
-function finish(message: string = undefined) {
+function finish(message: string = null) {
   mainFrame.locked = false
   working = false
   figma.root.setRelaunchData({ relaunch: '' })

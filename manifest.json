@@ -2,7 +2,7 @@
   "name": "Expose variables",
   "id": "1260896340900292469",
   "api": "1.0.0",
-  "main": "code.js",
+  "main": "dist/code.js",
   "editorType": [
     "figma"
   ],

@@ -4,12 +4,16 @@
   "description": "Keep your variables in UI kit, show them to developers and update in one click",
   "main": "code.js",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "webpack",
     "watch": "npm run build -- --watch"
   },
   "author": "Nick Qurle",
   "license": "",
   "devDependencies": {
-    "@figma/plugin-typings": "^1.70.0"
+    "@figma/plugin-typings": "^1.70.0",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
   }
 }
