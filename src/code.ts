@@ -148,21 +148,113 @@ function exposeVariables(data: Map<string, xCollection>, mainFrame: FrameNode) {
 }
 
 
-const oldData = new Map<string, string>([
-  ['key1', 'one'],
-  ['key2', 'two'],
-  ['key3', 'three']
+const oldData = new Map([
+  ['collection_id1', {
+    id: 'collection_id1',
+    name: 'First Collection',
+    variables: new Map([
+      ['variable_id1', {
+        id: 'variable_id1',
+        name: 'First Variable',
+        description: '',
+        type: 'color',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: 'variable_id2', resolvedValue: '#000' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#111' }],
+          ['mode_id3', { modeId: 'mode_id3', alias: null, resolvedValue: '#111111' }]
+        ])]
+      }
+      ],
+      ['variable_id2', {
+        id: 'variable_id2',
+        name: 'Second Variable',
+        description: '',
+        type: 'color',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: 'variable_id3', resolvedValue: '#000' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#222' }],
+          ['mode_id3', { modeId: 'mode_id3', alias: null, resolvedValue: '#222222' }]
+        ])]
+      }
+      ],
+      ['variable_id3', {
+        id: 'variable_id3',
+        name: 'Third Variable',
+        description: '',
+        type: 'string',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: null, resolvedValue: '#000' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#333' }],
+          ['mode_id3', { modeId: 'mode_id3', alias: null, resolvedValue: '#333333' }]
+        ])]
+      }
+      ]
+    ]),
+    modes: new Map([
+      ['mode_id1', { id: "mode_id1", name: "First mode" }],
+      ['mode_id2', { id: "mode_id2", name: "Second mode" }],
+      ['mode_id3', { id: "mode_id3", name: "Third mode" }]
+    ])
+  }]
 ])
 
-const newData = new Map<string, string>([
-  ['key1', 'one'],
-  ['key2', 'two new'],
-  ['key4', 'four']
+const newData = new Map([
+  ['collection_id1', {
+    id: 'collection_id1',
+    name: 'First Collection',
+    variables: new Map([
+      ['variable_id1', {
+        id: 'variable_id1',
+        name: 'First Variable',
+        description: '',
+        type: 'color',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: 'variable_id2', resolvedValue: '#000' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#111' }],
+          ['mode_id3', { modeId: 'mode_id3', alias: null, resolvedValue: '#111111' }]
+        ])]
+      }
+      ],
+      ['variable_id2', {
+        id: 'variable_id2',
+        name: 'Second Variable New',
+        description: '',
+        type: 'color',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: null, resolvedValue: '#3F0' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#222' }],
+          ['mode_id4', { modeId: 'mode_id4', alias: null, resolvedValue: '#222222' }]
+        ])]
+      }
+      ],
+      ['variable_id3', {
+        id: 'variable_id3',
+        name: 'Third Variable',
+        description: '',
+        type: 'string',
+        values: [new Map([
+          ['mode_id1', { modeId: 'mode_id1', alias: null, resolvedValue: '#000' }],
+          ['mode_id2', { modeId: 'mode_id2', alias: null, resolvedValue: '#333' }],
+          ['mode_id4', { modeId: 'mode_id4', alias: null, resolvedValue: '#333333' }]
+        ])]
+      }
+      ]
+    ]),
+    modes: new Map([
+      ['mode_id1', { id: "mode_id1", name: "First Mode" }],
+      ['mode_id2', { id: "mode_id2", name: "Second Mode New" }],
+      ['mode_id4', { id: "mode_id4", name: "Fourth Mode" }]
+    ])
+  }],
+  ['collection_id2', {
+    id: 'collection_id2',
+    name: 'Second Collection'
+  }]
 ])
 
 console.log(`Old data:\n ${serialize(oldData)}`)
 console.log(`New data: \n ${serialize(newData)} `)
-console.log(`Diff: \n ${se rialize(compare(oldData, newData))} `)
+console.log(`Diff: \n ${serialize(compare(oldData, newData))} `)
 
 
 
@@ -265,12 +357,18 @@ function compare(oldData: Map<string, any>, newData: Map<string, any>, writeUnch
   // })
 
   for (const [k, v] of newData) {
-    if (typeof v === 'object' && v !== null) {
-      console.log('Comparing objects or arrays!')
-      // TODO: compare any objects
+    const vOld = oldData.get(k)
+    if (v instanceof Map && vOld instanceof Map) {
+      console.log('Comparing nested maps!')
+      const nestedDiff = compare(v, vOld)
+      if (
+        nestedDiff.has('ADDED') ||
+        nestedDiff.has('UPDATED') ||
+        nestedDiff.has('DELETED')
+      )
+        diff.get('UPDATED').set(k, nestedDiff)
     } else {
       // We have primitive?
-      const vOld = oldData.get(k)
       if (vOld === undefined) {
         diff.get('ADDED').set(k, v)
       }
@@ -491,7 +589,7 @@ async function refreshVariablesSection(node) { }
 
 // Ending the work
 function finish(message: string = null) {
-  console.log(`finishing with msg ${ message } `)
+  console.log(`finishing with msg ${message} `)
   mainFrames.forEach(x => x.locked = false)
   working = false
   figma.root.setRelaunchData({ relaunch: '' })
