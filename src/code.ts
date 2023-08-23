@@ -53,25 +53,23 @@ setTimeout(finish.bind('Timeouted!'), 10000)
 
 // Get variables
 const collectionsData = writeVariables()
-console.log(collectionsData)
 if (!collectionsData.size)
   finish('You have no variables here')
 
 // If exposed variables exists in selection
 mainFrames = selection.filter(x => x.type === 'FRAME' && x?.getRelaunchData().rewrite === REWRITE_MSG) as FrameNode[]
 if (mainFrames.length) {
-  mainFrames.forEach(x => {
-    console.log(`mainFrame[${mainFrames.indexOf(x)}]plugin data: `)
-    console.log(JSON.parse(x.getPluginData('variables')))
+  // mainFrames.forEach(x => {
+  //   console.log(`mainFrame[${mainFrames.indexOf(x)}]plugin data: `)
+  //   console.log(JSON.parse(x.getPluginData('variables')))
 
-    console.log(compare(JSON.parse(x.getPluginData('variables')), collectionsData))
-  })
+  //   console.log(compare(JSON.parse(x.getPluginData('variables')), collectionsData))
+  // })
 }
 else
   mainFrames = [createMainFrame()]
 
 // exposeVariables().then(finish.bind(undefined))
-console.log(`main frames: ${mainFrames}`)
 mainFrames.forEach(x => exposeVariables(collectionsData, x))
 console.log(`Execution time: ${Date.now() - start} ms`)
 // finish(null)
@@ -90,7 +88,6 @@ function createMainFrame() {
 
 // Getting all collections and writing to collesctions map
 function writeVariables(): Map<string, xCollection> {
-  console.log('Writing variables')
 
   const cs = new Map<string, xCollection>()
   const collections: VariableCollection[] = figma.variables.getLocalVariableCollections()
@@ -137,11 +134,7 @@ function writeVariables(): Map<string, xCollection> {
 }
 
 function exposeVariables(data: Map<string, xCollection>, mainFrame: FrameNode) {
-  console.log(`exposing variables.current object: `)
-  console.log(data)
 
-  mainFrame.setPluginData('variables', JSON.stringify(data))
-  console.log(`exposed variables.plugin data: `)
   mainFrame.setPluginData('variables', JSON.stringify(data))
 
 
@@ -198,6 +191,7 @@ const oldData = new Map([
   }]
 ])
 
+
 const newData = new Map([
   ['collection_id1', {
     id: 'collection_id1',
@@ -251,6 +245,13 @@ const newData = new Map([
     name: 'Second Collection'
   }]
 ])
+
+console.log(`Is map instance: ${oldData.get('collection_id1').variables instanceof Map}`)
+console.log(`Old variable 1:\n ${oldData.get('collection_id1').variables.get('variable_id1').name}`)
+
+function serialize(map) {
+  return JSON.stringify(map, (key, value) => (value instanceof Map ? [...value] : value), '\t')
+}
 
 console.log(`Old data:\n ${serialize(oldData)}`)
 console.log(`New data: \n ${serialize(newData)} `)
@@ -358,321 +359,311 @@ function compare(oldData: Map<string, any>, newData: Map<string, any>, writeUnch
 
   for (const [k, v] of newData) {
     const vOld = oldData.get(k)
-    if (v instanceof Map && vOld instanceof Map) {
-      console.log('Comparing nested maps!')
-      const nestedDiff = compare(v, vOld)
-      if (
-        nestedDiff.has('ADDED') ||
-        nestedDiff.has('UPDATED') ||
-        nestedDiff.has('DELETED')
-      )
-        diff.get('UPDATED').set(k, nestedDiff)
-    } else {
-      // We have primitive?
-      if (vOld === undefined) {
-        diff.get('ADDED').set(k, v)
+    if (v instanceof Object && vOld instanceof Object) {
+
+      console.log('Comparing objects')
+      function compareObjects(oldData, newData) {
+        for (const [k, v] of Object.entries(newData)) {
+          const vOld = oldData['k']
+          // Need more logic
+        }
       }
-      else if (v === vOld) {
-        diff.get('UNCHANGED').set(k, v)
-      } else if (v !== vOld) {
-        diff.get('UPDATED').set(k, v)
+      if (v instanceof Map && vOld instanceof Map) {
+        console.log('Comparing nested maps!')
+        const nestedDiff = compare(v, vOld)
+        if (
+          nestedDiff.has('ADDED') ||
+          nestedDiff.has('UPDATED') ||
+          nestedDiff.has('DELETED')
+        )
+          diff.get('UPDATED').set(k, nestedDiff)
+      } else {
+        // We have primitive?
+        if (vOld === undefined) {
+          diff.get('ADDED').set(k, v)
+        }
+        else if (v === vOld) {
+          diff.get('UNCHANGED').set(k, v)
+        } else if (v !== vOld) {
+          diff.get('UPDATED').set(k, v)
+        }
       }
     }
-  }
-  for (const [k, v] of oldData) {
-    if (typeof v === 'object' && v !== null) {
-      console.log('Comparing objects or arrays!')
-      // TODO: compare any objects
-    } else {
-      if (!newData.has(k)) {
-        diff.get('DELETED').set(k, v)
+    for (const [k, v] of oldData) {
+      if (typeof v === 'object' && v !== null) {
+        // TODO: compare any objects
+      } else {
+        if (!newData.has(k)) {
+          diff.get('DELETED').set(k, v)
+        }
       }
     }
+    return diff
   }
-  return diff
-}
 
 
-function getResolvedValue(variableId, modeId) {
-  const variable = figma.variables.getVariableById(variableId)
-  const value = variable.valuesByMode[modeId]
-  if (value?.type === 'VARIABLE_ALIAS')
-    getResolvedValue(value.id, modeId)
-  else
-    return value
-}
-
-function calculateWidth(mainFrames: FrameNode[], nameWidth: number, valueWidthes: number[]) { }
-function setWidth(mainFrames: FrameNode[], nameWidth: number, valueWidthes: number[]) { }
-
-// async function exposeVariables(collectionsData: Map<string, xCollection>, mainFrames: FrameNode[]) {
-
-//   await figma.loadFontAsync(FONT_REGULAR)
-//   await figma.loadFontAsync(FONT_SEMIBOLD)
-//   await figma.loadFontAsync(FONT_ITALIC)
-
-//   for (const mainFrame of mainFrames) {
-//     for (const c of collectionsData.values()) {
-
-//       const collectionColumn = createAutolayout(c.name, 'HORIZONTAL', MARGIN_X)
-//       mainFrame.appendChild(collectionColumn)
-
-//       const collectionHeaderRow = createAutolayout(c.name, 'HORIZONTAL', MARGIN_X)
-//       collectionColumn.appendChild(collectionHeaderRow)
-
-//       const collectionNameCell = makeText(c.name, FONT_SEMIBOLD, L_FONT_SIZE)
-//       collectionHeaderRow.appendChild(collectionNameCell)
-//       maxNameWidth = c.renderWidth = collectionNameCell.width
-
-//       for (const [i, m] of c.modes.entries()) {
-//         const modeNameCell = makeText(c.name, FONT_SEMIBOLD, FONT_SIZE)
-//         collectionHeaderRow.appendChild(collectionNameCell)
-//         maxValueWidthes[i] = m.renderWidth = modeNameCell.width
-//       }
-
-//       const variables = c.variables
-//       variables.sort((a, b) => a.name.localeCompare(b.name))
-
-//       for (const v of variables) {
-//         const variableRow = createAutolayout(v.name, 'HORIZONTAL', MARGIN_X)
-//         collectionColumn.appendChild(variableRow)
-
-//         const variableNameCell = makeText(v.name, FONT_SEMIBOLD, FONT_SIZE)
-//         variableRow.appendChild(variableNameCell)
-//         v.renderWidth = variableNameCell.width
-//         maxNameWidth = Math.max(maxNameWidth, v.renderWidth)
-
-//         for (const [j, vl] of v.values.entries()) {
-//           const variableValueCell = makeText(vl.alias || vl.resolvedValue, FONT_REGULAR, FONT_SIZE)
-//           variableRow.appendChild(variableValueCell)
-//           vl.renderWidth = variableValueCell.width
-//           maxNameWidth = Math.max(maxValueWidthes[j], vl.renderWidth)
-//           vlCount++
-//         }
-
-
-//         vCount++
-//       }
-
-//       // Print Modes
-//       for (const m of c.modes) {
-//         const valueColumn: FrameNode = createAutolayout(m.name, 'VERTICAL', MARGIN_Y)
-//         collectionColumn.appendChild(valueColumn)
-
-//         const modeName = (c.modes.length === 1 && m.name === DEFAULT_MODE_NAME) ? 'Value' : m.name
-//         const mName = makeText(modeName, FONT_SEMIBOLD, FONT_SIZE)
-//         // offset(mName, MARGIN_X, 0)
-//         addToColumn(valueColumn, mName)
-//         valueColumn.setExplicitVariableModeForCollection(c.id, m.modeId)
-//         mName.minHeight = collectionNameCell.height
-//         mName.textAlignVertical = 'CENTER'
-
-//         // Print Values
-//         for (const v of variables) {
-//           let vValue: SceneNode
-//           const type = v.resolvedType
-//           let value = v.valuesByMode[m.modeId]
-//           let font = FONT_REGULAR
-//           if (value?.type === 'VARIABLE_ALIAS') {
-//             value = figma.variables.getVariableById(value.id).name.toString()
-//             font = FONT_ITALIC
-//           } else
-//             value = (type === 'COLOR') ? figmaRGBToHex(v.valuesByMode[m.modeId]) : v.valuesByMode[m.modeId].toString()
-
-//           if (type === 'BOOLEAN' || type === 'COLOR') {
-//             const valueRow: FrameNode = createAutolayout(v.name, 'HORIZONTAL', 16)
-
-//             vValue = makeText(value, font, FONT_SIZE)
-//             const unit = vValue.height
-
-//             // Representative ellipse
-//             const indicator = figma.createEllipse()
-//             indicator.resize(unit, unit)
-
-//             if (type === 'COLOR') {
-//               const newFills = JSON.parse(JSON.stringify(indicator.fills))
-//               console.log(newFills)
-//               newFills[0] = figma.variables.setBoundVariableForPaint(newFills[0], 'color', v)
-//               indicator.fills = newFills
-//               indicator.strokes = [DARK_20]
-//               indicator.strokeWeight = 1
-
-//               valueRow.appendChild(indicator)
-
-//             }
-
-//             if (type === 'BOOLEAN') {
-//               const box = figma.createFrame()
-//               const isTrue = value.toLowerCase() === 'true'
-//               box.resizeWithoutConstraints(2 * unit, unit)
-//               box.cornerRadius = unit / 2
-//               box.fills = isTrue ? [DARK] : []
-//               box.strokes = [DARK]
-//               box.strokeWeight = 2
-//               box.appendChild(indicator)
-//               indicator.x = isTrue ? unit : 0
-//               indicator.y = 0
-
-//               indicator.fills = isTrue ? [LIGHT] : []
-//               indicator.strokes = [DARK]
-//               indicator.strokeWeight = 2
-
-//               valueRow.appendChild(box)
-
-
-//             }
-
-
-//             valueRow.appendChild(vValue)
-//             addToColumn(valueColumn, valueRow)
-//           } else {
-//             vValue = makeText(value, font, FONT_SIZE)
-//             addToColumn(valueColumn, vValue)
-//           }
-//         }
-//       }
-//     }
-//   }
-// }
-
-function makeText(text: string, font: FontName, size: number, truncate: boolean = true) {
-  const node = figma.createText()
-  node.fontName = font
-  node.fontSize = size
-  node.fills = [DARK]
-  node.characters = text
-  node.textTruncation = truncate ? 'ENDING' : 'DISABLED'
-  return node
-}
-
-function addToColumn(autolayout: FrameNode, child) {
-  autolayout.appendChild(child)
-  child.layoutAlign = 'STRETCH'
-  child.maxWidth = MAX_COLUMN_WIDTH
-}
-
-function createFrame(name: string): FrameNode {
-  const frame: FrameNode = figma.createFrame()
-  frame.locked = true
-  frame.fills = [LIGHT]
-  frame.resizeWithoutConstraints(1000, 500)
-  frame.name = name
-  frame.x = Math.round(figma.viewport.center.x - frame.width / 2)
-  frame.y = Math.round(figma.viewport.center.y - frame.height / 2)
-  frame.cornerRadius = CORNER_RADIUS
-  return frame
-}
-
-function createAutolayout(
-  name: string = "Frame",
-  direction: "HORIZONTAL" | "NONE" | "VERTICAL" = 'HORIZONTAL',
-  gap = 0, paddingX = 0, paddingY = 0,
-  sizingX: "HUG" | "FIXED" | "FILL" = 'HUG',
-  sizingY: "HUG" | "FIXED" | "FILL" = 'HUG'
-): FrameNode {
-  const autolayout: FrameNode = figma.createFrame()
-  autolayout.name = name
-  autolayout.fills = []
-  autolayout.layoutMode = direction
-  autolayout.itemSpacing = gap
-  autolayout.paddingLeft = paddingX
-  autolayout.paddingRight = paddingX
-  autolayout.paddingTop = paddingY
-  autolayout.paddingBottom = paddingY
-  autolayout.layoutSizingHorizontal = sizingX
-  autolayout.layoutSizingVertical = sizingY
-  return autolayout
-
-}
-
-async function refreshVariablesSection(node) { }
-
-// Ending the work
-function finish(message: string = null) {
-  console.log(`finishing with msg ${message} `)
-  mainFrames.forEach(x => x.locked = false)
-  working = false
-  figma.root.setRelaunchData({ relaunch: '' })
-  if (message) {
-    notify(message)
+  function getResolvedValue(variableId, modeId) {
+    const variable = figma.variables.getVariableById(variableId)
+    const value = variable.valuesByMode[modeId]
+    if (value?.type === 'VARIABLE_ALIAS')
+      getResolvedValue(value.id, modeId)
+    else
+      return value
   }
-  else if (vCount > 0) {
-    notify(CONFIRM_MSGS[Math.floor(Math.random() * CONFIRM_MSGS.length)] +
-      " " + ACTION_MSGS[Math.floor(Math.random() * ACTION_MSGS.length)] +
-      " " + ((vCount === 1) ? "only one variable" : (vCount + " variables")))
+
+  function calculateWidth(mainFrames: FrameNode[], nameWidth: number, valueWidthes: number[]) { }
+  function setWidth(mainFrames: FrameNode[], nameWidth: number, valueWidthes: number[]) { }
+
+  // async function exposeVariables(collectionsData: Map<string, xCollection>, mainFrames: FrameNode[]) {
+
+  //   await figma.loadFontAsync(FONT_REGULAR)
+  //   await figma.loadFontAsync(FONT_SEMIBOLD)
+  //   await figma.loadFontAsync(FONT_ITALIC)
+
+  //   for (const mainFrame of mainFrames) {
+  //     for (const c of collectionsData.values()) {
+
+  //       const collectionColumn = createAutolayout(c.name, 'HORIZONTAL', MARGIN_X)
+  //       mainFrame.appendChild(collectionColumn)
+
+  //       const collectionHeaderRow = createAutolayout(c.name, 'HORIZONTAL', MARGIN_X)
+  //       collectionColumn.appendChild(collectionHeaderRow)
+
+  //       const collectionNameCell = makeText(c.name, FONT_SEMIBOLD, L_FONT_SIZE)
+  //       collectionHeaderRow.appendChild(collectionNameCell)
+  //       maxNameWidth = c.renderWidth = collectionNameCell.width
+
+  //       for (const [i, m] of c.modes.entries()) {
+  //         const modeNameCell = makeText(c.name, FONT_SEMIBOLD, FONT_SIZE)
+  //         collectionHeaderRow.appendChild(collectionNameCell)
+  //         maxValueWidthes[i] = m.renderWidth = modeNameCell.width
+  //       }
+
+  //       const variables = c.variables
+  //       variables.sort((a, b) => a.name.localeCompare(b.name))
+
+  //       for (const v of variables) {
+  //         const variableRow = createAutolayout(v.name, 'HORIZONTAL', MARGIN_X)
+  //         collectionColumn.appendChild(variableRow)
+
+  //         const variableNameCell = makeText(v.name, FONT_SEMIBOLD, FONT_SIZE)
+  //         variableRow.appendChild(variableNameCell)
+  //         v.renderWidth = variableNameCell.width
+  //         maxNameWidth = Math.max(maxNameWidth, v.renderWidth)
+
+  //         for (const [j, vl] of v.values.entries()) {
+  //           const variableValueCell = makeText(vl.alias || vl.resolvedValue, FONT_REGULAR, FONT_SIZE)
+  //           variableRow.appendChild(variableValueCell)
+  //           vl.renderWidth = variableValueCell.width
+  //           maxNameWidth = Math.max(maxValueWidthes[j], vl.renderWidth)
+  //           vlCount++
+  //         }
+
+
+  //         vCount++
+  //       }
+
+  //       // Print Modes
+  //       for (const m of c.modes) {
+  //         const valueColumn: FrameNode = createAutolayout(m.name, 'VERTICAL', MARGIN_Y)
+  //         collectionColumn.appendChild(valueColumn)
+
+  //         const modeName = (c.modes.length === 1 && m.name === DEFAULT_MODE_NAME) ? 'Value' : m.name
+  //         const mName = makeText(modeName, FONT_SEMIBOLD, FONT_SIZE)
+  //         // offset(mName, MARGIN_X, 0)
+  //         addToColumn(valueColumn, mName)
+  //         valueColumn.setExplicitVariableModeForCollection(c.id, m.modeId)
+  //         mName.minHeight = collectionNameCell.height
+  //         mName.textAlignVertical = 'CENTER'
+
+  //         // Print Values
+  //         for (const v of variables) {
+  //           let vValue: SceneNode
+  //           const type = v.resolvedType
+  //           let value = v.valuesByMode[m.modeId]
+  //           let font = FONT_REGULAR
+  //           if (value?.type === 'VARIABLE_ALIAS') {
+  //             value = figma.variables.getVariableById(value.id).name.toString()
+  //             font = FONT_ITALIC
+  //           } else
+  //             value = (type === 'COLOR') ? figmaRGBToHex(v.valuesByMode[m.modeId]) : v.valuesByMode[m.modeId].toString()
+
+  //           if (type === 'BOOLEAN' || type === 'COLOR') {
+  //             const valueRow: FrameNode = createAutolayout(v.name, 'HORIZONTAL', 16)
+
+  //             vValue = makeText(value, font, FONT_SIZE)
+  //             const unit = vValue.height
+
+  //             // Representative ellipse
+  //             const indicator = figma.createEllipse()
+  //             indicator.resize(unit, unit)
+
+  //             if (type === 'COLOR') {
+  //               const newFills = JSON.parse(JSON.stringify(indicator.fills))
+  //               console.log(newFills)
+  //               newFills[0] = figma.variables.setBoundVariableForPaint(newFills[0], 'color', v)
+  //               indicator.fills = newFills
+  //               indicator.strokes = [DARK_20]
+  //               indicator.strokeWeight = 1
+
+  //               valueRow.appendChild(indicator)
+
+  //             }
+
+  //             if (type === 'BOOLEAN') {
+  //               const box = figma.createFrame()
+  //               const isTrue = value.toLowerCase() === 'true'
+  //               box.resizeWithoutConstraints(2 * unit, unit)
+  //               box.cornerRadius = unit / 2
+  //               box.fills = isTrue ? [DARK] : []
+  //               box.strokes = [DARK]
+  //               box.strokeWeight = 2
+  //               box.appendChild(indicator)
+  //               indicator.x = isTrue ? unit : 0
+  //               indicator.y = 0
+
+  //               indicator.fills = isTrue ? [LIGHT] : []
+  //               indicator.strokes = [DARK]
+  //               indicator.strokeWeight = 2
+
+  //               valueRow.appendChild(box)
+
+
+  //             }
+
+
+  //             valueRow.appendChild(vValue)
+  //             addToColumn(valueColumn, valueRow)
+  //           } else {
+  //             vValue = makeText(value, font, FONT_SIZE)
+  //             addToColumn(valueColumn, vValue)
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }
+  // }
+
+  function makeText(text: string, font: FontName, size: number, truncate: boolean = true) {
+    const node = figma.createText()
+    node.fontName = font
+    node.fontSize = size
+    node.fills = [DARK]
+    node.characters = text
+    node.textTruncation = truncate ? 'ENDING' : 'DISABLED'
+    return node
+  }
+
+  function addToColumn(autolayout: FrameNode, child) {
+    autolayout.appendChild(child)
+    child.layoutAlign = 'STRETCH'
+    child.maxWidth = MAX_COLUMN_WIDTH
+  }
+
+  function createFrame(name: string): FrameNode {
+    const frame: FrameNode = figma.createFrame()
+    frame.locked = true
+    frame.fills = [LIGHT]
+    frame.resizeWithoutConstraints(1000, 500)
+    frame.name = name
+    frame.x = Math.round(figma.viewport.center.x - frame.width / 2)
+    frame.y = Math.round(figma.viewport.center.y - frame.height / 2)
+    frame.cornerRadius = CORNER_RADIUS
+    return frame
+  }
+
+  function createAutolayout(
+    name: string = "Frame",
+    direction: "HORIZONTAL" | "NONE" | "VERTICAL" = 'HORIZONTAL',
+    gap = 0, paddingX = 0, paddingY = 0,
+    sizingX: "HUG" | "FIXED" | "FILL" = 'HUG',
+    sizingY: "HUG" | "FIXED" | "FILL" = 'HUG'
+  ): FrameNode {
+    const autolayout: FrameNode = figma.createFrame()
+    autolayout.name = name
+    autolayout.fills = []
+    autolayout.layoutMode = direction
+    autolayout.itemSpacing = gap
+    autolayout.paddingLeft = paddingX
+    autolayout.paddingRight = paddingX
+    autolayout.paddingTop = paddingY
+    autolayout.paddingBottom = paddingY
+    autolayout.layoutSizingHorizontal = sizingX
+    autolayout.layoutSizingVertical = sizingY
+    return autolayout
 
   }
-  else notify(IDLE_MSGS[Math.floor(Math.random() * IDLE_MSGS.length)])
-  figma.closePlugin()
-}
 
-// Show new notification
-function notify(text: string) {
-  if (notification != null)
-    notification.cancel()
-  notification = figma.notify(text)
-}
+  async function refreshVariablesSection(node) { }
 
-// Showing interruption notification
-function cancel() {
-  if (notification != null)
-    notification.cancel()
-  if (working) {
-    notify("Plugin work have been interrupted")
+  // Ending the work
+  function finish(message: string = null) {
+    console.log(`finishing with msg ${message} `)
+    mainFrames.forEach(x => x.locked = false)
+    working = false
+    figma.root.setRelaunchData({ relaunch: '' })
+    if (message) {
+      notify(message)
+    }
+    else if (vCount > 0) {
+      notify(CONFIRM_MSGS[Math.floor(Math.random() * CONFIRM_MSGS.length)] +
+        " " + ACTION_MSGS[Math.floor(Math.random() * ACTION_MSGS.length)] +
+        " " + ((vCount === 1) ? "only one variable" : (vCount + " variables")))
+
+    }
+    else notify(IDLE_MSGS[Math.floor(Math.random() * IDLE_MSGS.length)])
     figma.closePlugin()
   }
-}
 
-// From https://github.com/stefnotch/json-safe-stringify
-
-function serialize(myMap) {
-  function selfIterator(map) {
-    return Array.from(map).reduce((acc, [key, value]) => {
-      if (value instanceof Map) {
-        acc[key] = selfIterator(value);
-      } else {
-        acc[key] = value;
-      }
-      return acc;
-    }, {})
+  // Show new notification
+  function notify(text: string) {
+    if (notification != null)
+      notification.cancel()
+    notification = figma.notify(text)
   }
 
-  const res = selfIterator(myMap)
-  return JSON.stringify(res, null, '\t');
-}
-
-// From https://github.com/figma-plugin-helper-functions/figma-plugin-helpers/blob/master/src/helpers/convertColor.ts
-
-const namesRGB = ['r', 'g', 'b']
-function figmaRGBToWebRGB(color: RGBA): webRGBA
-function figmaRGBToWebRGB(color: RGB): webRGB
-function figmaRGBToWebRGB(color): any {
-  const rgb = []
-
-  namesRGB.forEach((e, i) => {
-    rgb[i] = Math.round(color[e] * 255)
-  })
-
-  if (color['a'] !== undefined) rgb[3] = Math.round(color['a'] * 100) / 100
-  return rgb
-}
-
-function figmaRGBToHex(color: RGB | RGBA): string {
-  let hex = '#'
-
-  const rgb = figmaRGBToWebRGB(color) as webRGB | webRGBA
-  hex += ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1)
-
-  if (rgb[3] !== undefined) {
-    const a = Math.round(rgb[3] * 255).toString(16)
-    if (a.length == 1) {
-      hex += '0' + a
-    } else {
-      if (a !== 'ff') hex += a
+  // Showing interruption notification
+  function cancel() {
+    if (notification != null)
+      notification.cancel()
+    if (working) {
+      notify("Plugin work have been interrupted")
+      figma.closePlugin()
     }
   }
-  return hex
-}
 
-type webRGB = [number, number, number]
-type webRGBA = [number, number, number, number]
+  // From https://github.com/figma-plugin-helper-functions/figma-plugin-helpers/blob/master/src/helpers/convertColor.ts
+
+  const namesRGB = ['r', 'g', 'b']
+  function figmaRGBToWebRGB(color: RGBA): webRGBA
+  function figmaRGBToWebRGB(color: RGB): webRGB
+  function figmaRGBToWebRGB(color): any {
+    const rgb = []
+
+    namesRGB.forEach((e, i) => {
+      rgb[i] = Math.round(color[e] * 255)
+    })
+
+    if (color['a'] !== undefined) rgb[3] = Math.round(color['a'] * 100) / 100
+    return rgb
+  }
+
+  function figmaRGBToHex(color: RGB | RGBA): string {
+    let hex = '#'
+
+    const rgb = figmaRGBToWebRGB(color) as webRGB | webRGBA
+    hex += ((1 << 24) + (rgb[0] << 16) + (rgb[1] << 8) + rgb[2]).toString(16).slice(1)
+
+    if (rgb[3] !== undefined) {
+      const a = Math.round(rgb[3] * 255).toString(16)
+      if (a.length == 1) {
+        hex += '0' + a
+      } else {
+        if (a !== 'ff') hex += a
+      }
+    }
+    return hex
+  }
+
+  type webRGB = [number, number, number]
+  type webRGBA = [number, number, number, number]
