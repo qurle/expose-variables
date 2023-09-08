@@ -260,13 +260,8 @@ console.log(`Diff: \n ${serialize(compare(oldData, newData))} `)
 
 
 
-function compare(oldData: Map<string, any>, newData: Map<string, any>, writeUnchanged = false, deletedDetails = false) {
-  const diff = new Map<string, Map<string, any>>([
-    ['UNCHANGED', new Map()],
-    ['UPDATED', new Map()],
-    ['ADDED', new Map()],
-    ['DELETED', new Map()]
-  ])
+function compare(oldData: any, newData: any, writeUnchanged = false, deletedDetails = false) {
+  const diff = {}
 
   // const diff = {
   //   UNCHANGED: {},
@@ -418,6 +413,21 @@ function compare(oldData: Map<string, any>, newData: Map<string, any>, writeUnch
     else
       return value
   }
+}
+
+function set(obj, path, value, setrecursively = true) {
+  path.reduce((a, b, level) => {
+    if (setrecursively && typeof a[b] === "undefined" && level !== path.length) {
+      a[b] = {};
+      return a[b];
+    }
+
+    if (level === path.length) {
+      a[b] = value;
+      return value;
+    }
+    return a[b];
+  }, obj);
 }
 
 function calculateWidth(mainFrames: FrameNode[], nameWidth: number, valueWidthes: number[]) { }
