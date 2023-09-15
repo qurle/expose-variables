@@ -7,6 +7,7 @@ const ACTION_MSGS = ["Updated", "Writed", "Made it with", "Got"]
 const IDLE_MSGS = ["Did not found any variables", "Nothing to do, see no variables", "Any variables? Can't see it", "Can't update any variables. Did you set 'em up?"]
 const DEFAULT_MODE_NAME = 'Mode 1'
 const REWRITE_MSG = 'Rewrite this frame with new variables'
+const STATUS = { ADDED: 'added', UPDATED: 'changed', UNCHANGED: 'unchanged', DELETED: 'deleted' }
 
 let notification: NotificationHandler
 let selection: ReadonlyArray<SceneNode>
@@ -256,166 +257,113 @@ function serialize(map) {
 
 console.log(`Old data:\n ${serialize(oldData)}`)
 console.log(`New data: \n ${serialize(newData)} `)
-console.log(`Diff: \n ${serialize(compare(oldData, newData))} `)
-
-
+console.log(`Diff: \n ${serialize(compare2(oldData, newData))} `)
 
 function compare(oldData: any, newData: any, writeUnchanged = false, deletedDetails = false) {
   const diff = {}
+  // Compare objects or maps
+  if (isObjects(oldData, newData)) {
+    // Compare maps 
+    if (newData instanceof Map && oldData instanceof Map) {
+      for (const [key, value] of newData) {
+        const _value = oldData.get(key)
+        // Compare
+      }
+    }
+    // Compare objects 
+    else {
+      // Direct search (added, updated, unchanged)
+      for (const [key, value] of Object.entries(newData)) {
+        const _value = oldData[key]
+        if (isObjects(_value, value))
+          compare(_value, value)
+        // Non-objects
+        else {
+          if (_value === undefined) { set(diff, [STATUS.ADDED, key], value) }
+          else if (_value === value) { set(diff, [STATUS.UNCHANGED, key], value) }
+          else if (_value !== value) { set(diff, [STATUS.UPDATED, key], value) }
+        }
+      }
+      // Reverse search (deleted)
+      for (const [key, value] of Object.entries(oldData)) {
+        if (!newData[key])
+          set(diff, [STATUS.DELETED, key], deletedDetails ? value : null)
+      }
+    }
+  }
+}
 
-  // const diff = {
-  //   UNCHANGED: {},
-  //   UPDATED: {},
-  //   ADDED: {},
-  //   DELETED: {}
-  // }
+const isObjects = (obj1, obj2) => { return (obj1 instanceof Object && obj2 instanceof Object && (obj1 !== null && obj2 !== null)) }
 
-  // Structure will look like:
-
-  // JSON.stringify({
-  //   "collection_id1": {
-  //     // Unchanged properties
-  //     UNCHANGED: {
-  //       id: "collection_id1"
-  //     },
-  //     // Properties that changed or thier children changed somehow
-  //     UPDATED: {
-  //       name: "First Collection New Name",
-  //       modes: {
-  //         UNCHANGED: {
-  //           "mode_id1": { id: "mode_id1", name: "First mode" }
-  //         },
-  //         // Changes are nested
-  //         UPDATED: {
-  //           // At any level
-  //           "mode_id2": {
-  //             // Maybe UNCHANGED is not that necessary
-  //             UNCHANGED: {
-  //               id: "mode_id2",
-  //             },
-  //             UPDATED: {
-  //               name: "Second Mode New Name"
-  //             }
-  //           }
-  //         },
-  //         ADDED: {
-  //           "mode_id3": { id: "mode_id3", name: "Third mode" }
-  //         },
-  //         DELETED: {
-  //           // DELETED details is optional too
-  //           "mode_id4": { id: "mode_id4", name: "Fourth Mode" }
-  //         }
-  //       },
-  //       variables: {
-  //         // Variables list diff
-  //         UNCHANGED: {
-  //           "variable_id1": {
-  //             id: "variable_id1",
-  //             name: "First Variable",
-  //             description: "",
-  //             type: "color",
-  //             values: { ...},
-  //           },
-  //           UPDATED: {
-  //             "variable_id2": {
-  //               // Diff of the variable
-  //               UNCHANGED: { id: "variable_id2", description: "", type: "string" },
-  //               UPDATED: {
-  //                 name: "Second Variable New",
-  //                 values: {
-  //                   UNCHANGED: {
-  //                     "mode_id1": { modeId: "mode_id1", alias: null, resolvedValue: "i am one" }
-  //                   },
-  //                   UPDATED: {
-  //                     "mode_id2": {
-  //                       UNCHANGED: { modeId: "mode_id2", alias: "variable_idN" },
-  //                       UPDATED: { resolvedValue: "i am two" }
-  //                     }
-  //                   },
-  //                 }
-  //               }
-  //             }
-  //           },
-  //           ADDED: {
-  //             "variable_id3": {
-  //               id: "variable_id3",
-  //               name: "Third Variable",
-  //               description: "",
-  //               type: "color",
-  //               values: { ...},
-  //             }
-  //           },
-  //           DELETED: {
-  //             "variable_id4": {
-  //               id: "variable_id4",
-  //               name: "Fourth Variable",
-  //               description: "",
-  //               type: "color",
-  //               values: { ...},
-  //             }
-  //           }
-  //         }
-  //       }
-  //     }
-  //   }
-  // })
+function compare2(oldData: any, newData: any, writeUnchanged = false, deletedDetails = false) {
+  const diff = {}
 
   for (const [k, v] of newData) {
     const vOld = oldData.get(k)
-    if (v instanceof Object && vOld instanceof Object) {
 
-      console.log('Comparing objects')
-      function compareObjects(oldData, newData) {
-        for (const [k, v] of Object.entries(newData)) {
-          const vOld = oldData['k']
-          // Need more logic
-        }
-      }
+    // Compare objects or maps
+    if (v instanceof Object && vOld instanceof Object && v !== null) {
+
+      // Compare maps 
       if (v instanceof Map && vOld instanceof Map) {
         console.log('Comparing nested maps!')
-        const nestedDiff = compare(v, vOld)
-        if (
-          nestedDiff.has('ADDED') ||
-          nestedDiff.has('UPDATED') ||
-          nestedDiff.has('DELETED')
-        )
-          diff.get('UPDATED').set(k, nestedDiff)
-      } else {
-        // We have primitive?
-        if (vOld === undefined) {
-          diff.get('ADDED').set(k, v)
+
+        function compareMaps(oldData, newData) {
+          const nestedDiff = compare(v, vOld)
+          if (
+            nestedDiff.has('ADDED') ||
+            nestedDiff.has('UPDATED') ||
+            nestedDiff.has('DELETED')
+          )
+            diff.get('UPDATED').set(k, nestedDiff)
         }
-        else if (v === vOld) {
-          diff.get('UNCHANGED').set(k, v)
-        } else if (v !== vOld) {
-          diff.get('UPDATED').set(k, v)
+      }
+
+      // Compare objects 
+      else {
+        console.log('Comparing objects')
+
+        function compareObjects(oldData, newData) {
+          for (const [k, v] of Object.entries(newData)) {
+            const vOld = oldData['k']
+            // Need more logic
+          }
         }
       }
     }
-    for (const [k, v] of oldData) {
-      if (typeof v === 'object' && v !== null) {
-        // TODO: compare any objects
-      } else {
-        if (!newData.has(k)) {
-          diff.get('DELETED').set(k, v)
+
+    // Compare primitives
+    else {
+
+      if (vOld === undefined) { set(diff, [STATUS.ADDED, k], v) }
+      else if (v === vOld) { set(diff, [STATUS.UNCHANGED, k], v) }
+      else if (v !== vOld) { set(diff, [STATUS.UPDATED, k], v) }
+
+      for (const [k, v] of oldData) {
+        if (typeof v === 'object' && v !== null) {
+          // Compare any objects
+        } else {
+          if (!newData.has(k)) {
+            set(diff, [STATUS.DELETED, k], v)
+          }
         }
       }
     }
     return diff
   }
-
-
-  function getResolvedValue(variableId, modeId) {
-    const variable = figma.variables.getVariableById(variableId)
-    const value = variable.valuesByMode[modeId]
-    if (value?.type === 'VARIABLE_ALIAS')
-      getResolvedValue(value.id, modeId)
-    else
-      return value
-  }
 }
 
-function set(obj, path, value, setrecursively = true) {
+
+function getResolvedValue(variableId, modeId) {
+  const variable = figma.variables.getVariableById(variableId)
+  const value = variable.valuesByMode[modeId]
+  if (value?.type === 'VARIABLE_ALIAS')
+    getResolvedValue(value.id, modeId)
+  else
+    return value
+}
+
+function set(obj: Object, path, value, setrecursively = true) {
   path.reduce((a, b, level) => {
     if (setrecursively && typeof a[b] === "undefined" && level !== path.length) {
       a[b] = {};
